@@ -44,6 +44,9 @@ pub struct Config {
     pub notifications: bool,
     #[serde(default = "default_true")]
     pub bell: bool,
+    /// Disable mouse capture
+    #[serde(default)]
+    pub disable_mouse: bool,
     /// User configuration
     pub user: User,
     #[cfg(feature = "dev")]
@@ -129,6 +132,7 @@ impl Config {
             show_receipts: true,
             notifications: true,
             bell: true,
+            disable_mouse: false,
             #[cfg(feature = "dev")]
             developer: Default::default(),
             sqlite: Default::default(),

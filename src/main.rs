@@ -219,7 +219,12 @@ async fn run(config: Config, passphrase: Passphrase, relink: bool) -> anyhow::Re
     });
 
     let mut stdout = std::io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    execute!(stdout,
+        EnterAlternateScreen,
+    )?;
+    if !app.config.disable_mouse {
+        execute!(stdout, EnableMouseCapture)?;
+    }
 
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
@@ -365,9 +370,10 @@ async fn run(config: Config, passphrase: Passphrase, relink: bool) -> anyhow::Re
     execute!(
         terminal.backend_mut(),
         LeaveAlternateScreen,
-        DisableMouseCapture
-    )
-    .unwrap();
+    )?;
+    if !app.config.disable_mouse {
+        execute!(terminal.backend_mut(), DisableMouseCapture)?;
+    }
     terminal.show_cursor().unwrap();
 
     res
