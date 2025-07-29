@@ -3,6 +3,7 @@
 use std::fmt;
 
 use chrono::Datelike;
+use std::cmp::max;
 use itertools::Itertools;
 use ratatui::Frame;
 use ratatui::text::{Line, Span, Text};
@@ -27,8 +28,9 @@ use crate::receipt::{Receipt, ReceiptEvent};
 use crate::storage::MessageId;
 use crate::util::utc_timestamp_msec_to_local;
 
-use super::CHANNEL_VIEW_RATIO;
 use super::name_resolver::NameResolver;
+
+const CHANNELS_TITLE: &str = "Channels";
 
 /// The main function drawing the UI for each frame
 pub fn draw(f: &mut Frame, app: &mut App) {
@@ -45,11 +47,13 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         draw_help(f, app, chunks[1]);
         return;
     }
+
+    let channels_width = max(max_channel_name_width(app), CHANNELS_TITLE.width());
     let chunks = Layout::default()
         .constraints(
             [
-                Constraint::Ratio(1, CHANNEL_VIEW_RATIO),
-                Constraint::Ratio(3, CHANNEL_VIEW_RATIO),
+                Constraint::Length((channels_width + 4) as u16),
+                Constraint::Min(0),
             ]
             .as_ref(),
         )
@@ -98,6 +102,16 @@ fn draw_select_channel_popup(f: &mut Frame, select_channel: &mut SelectChannel) 
     f.render_stateful_widget(list, chunks[1], &mut select_channel.state);
 }
 
+fn max_channel_name_width(app: &App) -> usize {
+    app.channels
+        .items
+        .iter()
+        .filter_map(|&channel_id| app.storage.channel(channel_id))
+        .map(|channel| app.channel_name(&channel).width())
+        .max()
+        .unwrap_or(10)
+}
+
 fn draw_channels(f: &mut Frame, app: &mut App, area: Rect) {
     let channel_list_width = area.width.saturating_sub(2) as usize;
     let channels = app
@@ -127,7 +141,7 @@ fn draw_channels(f: &mut Frame, app: &mut App, area: Rect) {
         });
 
     let channels = List::new(channels)
-        .block(Block::default().borders(Borders::ALL).title("Channels"))
+        .block(Block::default().borders(Borders::ALL).title(CHANNELS_TITLE))
         .highlight_style(Style::default().fg(Color::Black).bg(Color::Gray));
     let no_channels = channels.is_empty();
     f.render_stateful_widget(channels, area, &mut app.channels.state);
